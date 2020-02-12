@@ -1,4 +1,3 @@
-import numpy as np
 import json,multiprocessing
 
 from pymatgen.io.qchem.inputs import QCInput
