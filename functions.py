@@ -17,19 +17,22 @@ def QCOutput_to_encode(qcoutput,more_info=None):
     requested_info.append(more_info)
 
     data = {}
-    # Assemble the compressed dictionary of results
-    for info in qcoutput.as_dict()['data'].keys():
-        if info in requested_info:
-            data[info] = qcoutput.as_dict()['data'][info]
+    for n in range(len(qcoutput)):
+        data['job_'+str(n)] = {}
+        # Assemble the compressed dictionary of results
+        for info in qcoutput[n].as_dict()['data'].keys():
+            if info in requested_info:
+                data[info] = qcoutput[n].as_dict()['data'][info]
+    
     # Return the reduced results in JSON compression
     return json.dumps(data)
     
     
 def encode_to_QCInput(encode,rem,pcm=None,solvent=None):
-    """Takes final geometry from encode, creates QCInput object
+    """Takes final geometry from encode of last job, creates QCInput object
     """
     data = json.loads(encode, encoding='utf-8')
-    
+    data = data['job_'+str(len(data)-1)]
     try:
         opt_geom = Molecule(
             species=data.get('species'),
@@ -52,7 +55,7 @@ def run_QChem(label,encode=None,rem=None,pcm=None,solvent=None,more_info=None):
     outname = label + '.out'
     logname = label + '.log'
     handlers = [QChemErrorHandler(input_file=inname,output_file=outname)]
-    """if no encoding provided, assume first Firework in workflow and that input file is already written
+    """If no encoding provided, assume this is the first Firework in workflow and that input file is already written.
     'label' is the name of the file without the extension (e.g. .inp, .out). otherwise, take encoding, 
     form new QCInput and write input file, then run.
     """   
@@ -72,6 +75,8 @@ def run_QChem(label,encode=None,rem=None,pcm=None,solvent=None,more_info=None):
     ]
     c = Custodian(handlers, jobs, max_errors=10)
     c.run()
-
-    output = QCOutput(filename=outname)
+    try:
+        output = [QCOutput(filename=outname)]
+    except:
+        output = QCOutput.multiple_outputs_from_file(QCOutput,filename)
     return QCOutput_to_encode(output,more_info=more_info)
