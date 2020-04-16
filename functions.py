@@ -22,7 +22,7 @@ def QCOutput_to_encode(qcoutput,more_info=None):
         # Assemble the compressed dictionary of results
         for info in qcoutput[n].as_dict()['data'].keys():
             if info in requested_info:
-                data[info] = qcoutput[n].as_dict()['data'][info]
+                data['job_'+str(n)][info] = qcoutput[n].as_dict()['data'][info]
     
     # Return the reduced results in JSON compression
     return json.dumps(data)
