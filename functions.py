@@ -1,4 +1,4 @@
-import json,multiprocessing
+import json,multiprocessing,subprocess
 
 from pymatgen.io.qchem.inputs import QCInput
 from pymatgen.io.qchem.outputs import QCOutput
@@ -23,7 +23,10 @@ def QCOutput_to_encode(qcoutput,more_info=None):
         for info in qcoutput[n].as_dict()['data'].keys():
             if info in requested_info:
                 data['job_'+str(n)][info] = qcoutput[n].as_dict()['data'][info]
-    
+    for job in data:
+        if data[job]['errors'] != None or data[job]['errors'] != []:
+            raise Exception('Errors detected in one or more of the jobs')
+
     # Return the reduced results in JSON compression
     return json.dumps(data)
     
@@ -50,7 +53,7 @@ def encode_to_QCInput(encode,rem,pcm=None,solvent=None):
     return NewInput
     
 
-def run_QChem(label,encode=None,rem=None,pcm=None,solvent=None,more_info=None):
+def run_QChem(label,encode=None,rem=None,pcm=None,solvent=None,more_info=None, self_correct=True):
     inname = label + '.inp'
     outname = label + '.out'
     logname = label + '.log'
@@ -62,19 +65,23 @@ def run_QChem(label,encode=None,rem=None,pcm=None,solvent=None,more_info=None):
     if encode!= None:
         qcin = encode_to_QCInput(encode=encode,rem=rem,pcm=pcm,solvent=solvent)
         qcin.write_file(inname)
-    
-    command='qchem'
-    jobs = [
-        QCJob(
-            input_file=inname,
-            output_file=outname,
-            qchem_command = command,
-            max_cores = multiprocessing.cpu_count(),
-            qclog_file=logname
-        )
-    ]
-    c = Custodian(handlers, jobs, max_errors=10)
-    c.run()
+    if self_correct:
+        command='qchem'
+        jobs = [
+            QCJob(
+                input_file=inname,
+                output_file=outname,
+                qchem_command = command,
+                max_cores = multiprocessing.cpu_count(),
+                qclog_file=logname
+            )
+        ]
+        c = Custodian(handlers, jobs, max_errors=10)
+        c.run()
+    else:
+        qclog = open(logname, "w")
+        subprocess.Popen(self.current_command, stdout=qclog, shell=True)
+
     try:
         output = [QCOutput(filename=outname)]
     except:
