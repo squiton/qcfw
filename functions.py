@@ -24,7 +24,7 @@ def QCOutput_to_encode(qcoutput,more_info=None):
             if info in requested_info:
                 data['job_'+str(n)][info] = qcoutput[n].as_dict()['data'][info]
     for job in data:
-        if data[job]['errors'] != None or data[job]['errors'] != []:
+        if data[job]['errors'] != None and data[job]['errors'] != []:
             raise Exception('Errors detected in one or more of the jobs')
 
     # Return the reduced results in JSON compression
