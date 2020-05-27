@@ -25,7 +25,7 @@ def QCOutput_to_encode(qcoutput,more_info=None):
                 data['job_'+str(n)][info] = qcoutput[n].as_dict()['data'][info]
     for job in data:
         if data[job]['errors'] != None and data[job]['errors'] != []:
-            raise Exception('Errors detected in one or more of the jobs')
+            raise Exception('Errors detected in one or more of the jobs: ' + str(data[job]['errors']))
 
     # Return the reduced results in JSON compression
     return json.dumps(data)
@@ -80,8 +80,9 @@ def run_QChem(label,encode=None,rem=None,pcm=None,solvent=None,more_info=None, s
         c.run()
     else:
         qclog = open(logname, "w")
-        current_command = 'qchem -nt 20 ' + inname
-        subprocess.Popen(current_command, stdout=qclog, shell=True)
+        current_command = ['qchem', '-nt', '20',inname]
+        print(current_command)
+        subprocess.run(current_command, stdout=qclog, shell=True)
 
     try:
         output = [QCOutput(filename=outname)]
