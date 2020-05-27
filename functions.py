@@ -80,7 +80,8 @@ def run_QChem(label,encode=None,rem=None,pcm=None,solvent=None,more_info=None, s
         c.run()
     else:
         qclog = open(logname, "w")
-        subprocess.Popen(self.current_command, stdout=qclog, shell=True)
+        current_command = 'qchem -nt 20 ' + inname
+        subprocess.Popen(current_command, stdout=qclog, shell=True)
 
     try:
         output = [QCOutput(filename=outname)]
