@@ -57,6 +57,7 @@ def run_QChem(label,encode=None,rem=None,pcm=None,solvent=None,more_info=None, s
     inname = label + '.inp'
     outname = label + '.out'
     logname = label + '.log'
+    command='qchem'
     handlers = [QChemErrorHandler(input_file=inname,output_file=outname)]
     """If no encoding provided, assume this is the first Firework in workflow and that input file is already written.
     'label' is the name of the file without the extension (e.g. .inp, .out). otherwise, take encoding, 
@@ -65,8 +66,8 @@ def run_QChem(label,encode=None,rem=None,pcm=None,solvent=None,more_info=None, s
     if encode!= None:
         qcin = encode_to_QCInput(encode=encode,rem=rem,pcm=pcm,solvent=solvent)
         qcin.write_file(inname)
+    
     if self_correct:
-        command='qchem'
         jobs = [
             QCJob(
                 input_file=inname,
@@ -78,11 +79,23 @@ def run_QChem(label,encode=None,rem=None,pcm=None,solvent=None,more_info=None, s
         ]
         c = Custodian(handlers, jobs, max_errors=10)
         c.run()
-    else:
+    else: 
+        job = QCJob(
+                input_file=inname,
+                output_file=outname,
+                qchem_command = command,
+                max_cores = multiprocessing.cpu_count(),
+                qclog_file=logname
+        )
+        job.setup()
+        p=job.run()
+        p.wait()
+        """
         qclog = open(logname, "w")
         current_command = ['qchem', '-nt', '20',inname]
         print(current_command)
         subprocess.run(current_command, stdout=qclog, shell=True)
+        """
 
     try:
         output = [QCOutput(filename=outname)]
